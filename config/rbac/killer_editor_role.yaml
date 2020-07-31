@@ -1,0 +1,24 @@
+# permissions for end users to edit killers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: killer-editor-role
+rules:
+- apiGroups:
+  - toxi.tech.claudioed
+  resources:
+  - killers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - toxi.tech.claudioed
+  resources:
+  - killers/status
+  verbs:
+  - get

@@ -36,16 +36,11 @@ spec:
           properties:
             rule:
               properties:
-                duration:
-                  description: A Duration represents the elapsed time between two
-                    instants as an int64 nanosecond count. The representation limits
-                    the largest representable duration to approximately 290 years.
-                  format: int64
-                  type: integer
+                every:
+                  type: string
               type: object
             selector:
-              description: Foo is an example field of Killer. Edit Killer_types.go
-                to remove/update
+              description: Selector is a target that will receive the action
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.

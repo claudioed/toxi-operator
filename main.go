@@ -71,6 +71,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Killer"),
 		Scheme: mgr.GetScheme(),
+		Er:     mgr.GetEventRecorderFor("Killer"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Killer")
 		os.Exit(1)

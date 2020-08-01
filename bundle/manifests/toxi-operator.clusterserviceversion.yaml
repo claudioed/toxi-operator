@@ -8,10 +8,18 @@ metadata:
           "apiVersion": "toxi.tech.claudioed/v1alpha1",
           "kind": "Killer",
           "metadata": {
-            "name": "killer-sample"
+            "name": "players-killer"
           },
           "spec": {
-            "foo": "bar"
+            "rule": {
+              "duration": "15s"
+            },
+            "selector": {
+              "matchLabels": {
+                "app": "players",
+                "version": "v1"
+              }
+            }
           }
         }
       ]
@@ -37,6 +45,19 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          - pods
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - toxi.tech.claudioed
           resources:
@@ -108,7 +129,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: controller:latest
+                image: claudioed/toxi-operator:latest
                 name: manager
                 resources:
                   limits:

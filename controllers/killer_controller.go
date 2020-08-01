@@ -18,16 +18,14 @@ package controllers
 
 import (
 	"context"
+	toxiv1alpha1 "github.com/claudioed/toxi-operator/api/v1alpha1"
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	toxiv1alpha1 "github.com/claudioed/toxi-operator/api/v1alpha1"
+	"time"
 )
 
 // KillerReconciler reconciles a Killer object
@@ -35,10 +33,11 @@ type KillerReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+	Er     record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=toxi.tech.claudioed,resources=killers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods;events,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=toxi.tech.claudioed,resources=killers/status,verbs=get;update;patch
 
 func (r *KillerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -52,29 +51,12 @@ func (r *KillerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, nil
 		}
 	}
-	r.Log.Info("Finding pods to delete ", "killer_name", req.Name, "killer_namespace", req.Namespace)
-	sel := labels.NewSelector()
-	for key, value := range instance.Spec.Selector.MatchLabels {
-		r, _ := labels.NewRequirement(key, selection.Equals, []string{value})
-		sel.Add(*r)
-	}
-	pods := &v1.PodList{}
-	r.Client.List(context.TODO(), pods, &client.ListOptions{
-		LabelSelector: client.MatchingLabelsSelector{Selector: sel},
-		Namespace:     req.Namespace,
-	})
-	if len(pods.Items) > 0 {
-		r.Log.Info("There are pods to delete. ", "Number:", len(pods.Items))
-		err := r.KillPods(pods)
-		if err != nil {
-			r.Log.Error(err, "Error to delete pods ", "killer_name", req.Name, "killer_namespace", req.Namespace)
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true, RequeueAfter: instance.Spec.Rule.Every}, nil
+	if err := r.EnsurePodsKilled(instance); err != nil {
+		return ctrl.Result{}, err
 	} else {
-		r.Log.Info("There are no pods to delete ")
+		when, _ := time.ParseDuration(instance.Spec.Rule.Every)
+		return ctrl.Result{Requeue: true, RequeueAfter: when}, err
 	}
-	return ctrl.Result{}, nil
 }
 
 func (r *KillerReconciler) SetupWithManager(mgr ctrl.Manager) error {

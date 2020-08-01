@@ -46,8 +46,7 @@ spec:
                   type: integer
               type: object
             selector:
-              description: Foo is an example field of Killer. Edit Killer_types.go
-                to remove/update
+              description: Selector is a target that will receive the action
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.

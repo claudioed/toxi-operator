@@ -29,15 +29,14 @@ type KillerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Killer. Edit Killer_types.go to remove/update
+	// Selector is a target that will receive the action
 	Selector *metav1.LabelSelector `json:"selector,omitempty"`
-	Rule *Rule `json:"rule,omitempty"`
+	Rule     *Rule                 `json:"rule,omitempty"`
 }
 
 type Rule struct {
 	Every time.Duration `json:"duration,omitempty"`
 }
-
 
 // KillerStatus defines the observed state of Killer
 type KillerStatus struct {

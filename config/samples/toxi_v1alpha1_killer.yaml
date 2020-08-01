@@ -1,7 +1,11 @@
 apiVersion: toxi.tech.claudioed/v1alpha1
 kind: Killer
 metadata:
-  name: killer-sample
+  name: players-killer
 spec:
-  # Add fields here
-  foo: bar
+  selector:
+    matchLabels:
+      app: players
+      version: v1
+  rule:
+    duration: 15s

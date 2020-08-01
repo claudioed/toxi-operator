@@ -38,42 +38,40 @@ type KillerReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=toxi.tech.claudioed,resources=killers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=toxi.tech.claudioed,resources=killers/status,verbs=get;update;patch
 
 func (r *KillerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	r.Log.Info("reconciling killer_name", req.Name,"killer_namespace",req.Namespace)
+	r.Log.Info("Starting reconcile", "killer_name", req.Name, "killer_namespace", req.Namespace)
 	instance := &toxiv1alpha1.Killer{}
-	r.Log.Info("finding killer_name", req.Name,"killer_namespace",req.Namespace)
+	r.Log.Info("Finding updated killer ", "killer_name", req.Name, "killer_namespace", req.Namespace)
 	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
-	if err != nil{
-		if errors.IsNotFound(err){
-			r.Log.Info("pod_killer deleted", req.NamespacedName,"killer_namespace",req.Name)
-			return ctrl.Result{},nil
+	if err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("Killer deleted nothing to do", "killer_name", req.Name, "killer_namespace", req.Namespace)
+			return ctrl.Result{}, nil
 		}
 	}
-	r.Log.Info("Killer found killer_name", req.Name,"killer_namespace",req.Namespace)
-	r.Log.Info("Finding pods to delete killer_name", req.Name,"killer_namespace",req.Namespace)
+	r.Log.Info("Finding pods to delete ", "killer_name", req.Name, "killer_namespace", req.Namespace)
 	sel := labels.NewSelector()
 	for key, value := range instance.Spec.Selector.MatchLabels {
-		r,_ := labels.NewRequirement(key,selection.Equals,[]string{value})
+		r, _ := labels.NewRequirement(key, selection.Equals, []string{value})
 		sel.Add(*r)
 	}
 	pods := &v1.PodList{}
-	r.Client.List(context.TODO(),pods,&client.ListOptions{
+	r.Client.List(context.TODO(), pods, &client.ListOptions{
 		LabelSelector: client.MatchingLabelsSelector{Selector: sel},
 		Namespace:     req.Namespace,
 	})
-	r.Log.Info("pods to delete killer_name", req.Name,"killer_namespace",req.Namespace)
-
 	if len(pods.Items) > 0 {
-		r.Log.Info("There are pods to delete. Number ", len(pods.Items))
+		r.Log.Info("There are pods to delete. ", "Number:", len(pods.Items))
 		err := r.KillPods(pods)
-		if err != nil{
-			r.Log.Error(err,"Error to delete pods killer_name ", req.Name,"killer_namespace",req.Namespace)
-			return ctrl.Result{},err
+		if err != nil {
+			r.Log.Error(err, "Error to delete pods ", "killer_name", req.Name, "killer_namespace", req.Namespace)
+			return ctrl.Result{}, err
 		}
-		return ctrl.Result{Requeue: true,RequeueAfter: instance.Spec.Rule.Every},nil
-	}else{
+		return ctrl.Result{Requeue: true, RequeueAfter: instance.Spec.Rule.Every}, nil
+	} else {
 		r.Log.Info("There are no pods to delete ")
 	}
 	return ctrl.Result{}, nil
